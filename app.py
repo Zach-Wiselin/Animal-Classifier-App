@@ -2,39 +2,31 @@ import streamlit as st
 from PIL import Image
 import numpy as np
 import tensorflow as tf
+import tensorflow_hub as hub
 import requests
-import os
 
-# GitHub URL for the model file
-MODEL_URL = "https://raw.githubusercontent.com/Zach-Wiselin/Animal-Classifier-App/main/Model.h5"
-
-# Download the model if not present locally
+# Load the TensorFlow Hub model
 @st.cache_resource
 def load_model():
-    if not os.path.exists("Model.h5"):
-        with st.spinner("Downloading model..."):
-            try:
-                response = requests.get(MODEL_URL)
-                with open("Model.h5", "wb") as f:
-                    f.write(response.content)
-            except Exception as e:
-                st.error(f"Failed to download the model: {e}")
-                st.stop()
-
-    # Load the model
-    try:
-        return tf.keras.models.load_model("Model.h5")
-    except Exception as e:
-        st.error(f"Error loading the model: {e}")
-        st.stop()
+    model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/classification/4"
+    return hub.KerasLayer(model_url)
 
 model = load_model()
 
-# Preprocess the image for the model
+# Preprocess the image
 def preprocess_image(image):
-    image = image.resize((224, 224))  # Ensure image size matches model input
+    image = image.resize((224, 224))  # Resize to model input size
     img_array = np.array(image, dtype=np.float32) / 255.0  # Normalize pixel values
-    return np.expand_dims(img_array, axis=0)  # Add batch dimension
+    return np.expand_dims(img_array, axis=0)
+
+# Fetch ImageNet labels
+@st.cache_data
+def fetch_imagenet_labels():
+    url = "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
+    response = requests.get(url)
+    return response.text.splitlines()
+
+imagenet_labels = fetch_imagenet_labels()
 
 # Streamlit App
 st.title("Animal Classifier 🐾")
@@ -44,28 +36,21 @@ st.write("Capture an image using your webcam to classify animals.")
 camera_input = st.camera_input("Take a picture using your webcam")
 
 if camera_input:
-    # Load and preprocess the captured image
     image = Image.open(camera_input).convert("RGB")
     st.image(image, caption="Captured Image", use_column_width=True)
 
+    # Preprocess the image and make predictions
     input_array = preprocess_image(image)
-
-    # Predict using the model
-    predictions = model.predict(input_array)
-    predicted_class_idx = np.argmax(predictions[0])
+    predictions = model(input_array)
+    predicted_class_idx = np.argmax(predictions)
     confidence = predictions[0][predicted_class_idx] * 100
+    predicted_label = imagenet_labels[predicted_class_idx]
 
-    # Update with the actual class labels
-    animal_labels = ["lion", "tiger", "cow", "elephant", "zebra", "giraffe", "bear", "deer", "fox", "rabbit"]
-
-    # Map the prediction index to the label
-    predicted_label = animal_labels[predicted_class_idx] if predicted_class_idx < len(animal_labels) else "Unknown"
-
-    # Display the prediction
+    # Display results
     st.markdown(f"### It's a **{predicted_label.capitalize()}**!")
     st.markdown(f"**Confidence:** {confidence:.2f}%")
 
-    # Fetch animal information from Wikipedia
+    # Fetch animal info from Wikipedia
     st.markdown(f"Fetching information about **{predicted_label}**...")
     try:
         response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
