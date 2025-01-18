@@ -4,23 +4,20 @@ import numpy as np
 import tensorflow as tf
 import requests
 
-# Load the iNaturalist species classifier model from TensorFlow Hub
+# Load the MobileNetV2 Animal Species Classifier model
 @st.cache_resource
-def load_inaturalist_model():
-    return tf.keras.models.load_model("https://tfhub.dev/google/inaturalist_species_classification/1")
+def load_model():
+    return tf.keras.models.load_model("Model.h5")  # Adjusted to the main path
 
-model = load_inaturalist_model()
+model = load_model()
 
-# Preprocess the image for the iNaturalist model
+# Preprocess the image for the model
 def preprocess_image(image):
-    image = image.resize((299, 299))  # iNaturalist model expects 299x299 input
+    image = image.resize((224, 224))  # Model expects 224x224 input
     img_array = np.array(image, dtype=np.float32) / 255.0  # Normalize pixel values
     return np.expand_dims(img_array, axis=0)  # Add batch dimension
 
-# Class labels for the iNaturalist model (manually added for this example)
-animal_labels = ["cow", "elephant", "zebra", "giraffe", "lion", "tiger", "deer", "fox", "rabbit", "wolf", "bear", "monkey", "panda", "kangaroo", "sheep", "peacock", "parrot", "eagle"]
-
-# Streamlit UI
+# Streamlit App
 st.title("Animal Classifier 🐾")
 st.write("Capture an image using your webcam to classify animals accurately.")
 
@@ -34,11 +31,17 @@ if camera_input:
 
     input_array = preprocess_image(image)
 
-    # Predict using the iNaturalist model
+    # Predict using the model
     predictions = model.predict(input_array)
     predicted_class_idx = np.argmax(predictions[0])
-    predicted_label = animal_labels[predicted_class_idx] if predicted_class_idx < len(animal_labels) else "Unknown"
     confidence = predictions[0][predicted_class_idx] * 100
+
+    # Update with the actual class labels from Kaggle's dataset
+    # Replace this list with the full label list from the Kaggle dataset
+    animal_labels = ["lion", "tiger", "cow", "elephant", "zebra", "giraffe", "bear", "deer", "fox", "rabbit"]
+
+    # Map the prediction index to the label
+    predicted_label = animal_labels[predicted_class_idx] if predicted_class_idx < len(animal_labels) else "Unknown"
 
     # Display the prediction
     st.markdown(f"### It's a **{predicted_label.capitalize()}**!")
