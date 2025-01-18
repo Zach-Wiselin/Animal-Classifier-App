@@ -4,13 +4,21 @@ import cv2
 import torch
 import numpy as np
 from pathlib import Path
-import requests
 import subprocess
+import requests
 
-# Clone YOLOv5 dynamically if not present
+# Ensure YOLOv5 and ultralytics dependencies are available
 MODEL_PATH = Path("yolov5")
 if not MODEL_PATH.exists():
     subprocess.run(["git", "clone", "https://github.com/ultralytics/yolov5.git", str(MODEL_PATH)])
+    subprocess.run(["pip", "install", "-r", str(MODEL_PATH / "requirements.txt")])
+
+# Ensure ultralytics is installed
+try:
+    import ultralytics
+except ImportError:
+    subprocess.run(["pip", "install", "ultralytics"])
+    import ultralytics
 
 # Load YOLOv5 model (using a fine-tuned or pre-trained weights path)
 model = torch.hub.load(str(MODEL_PATH), 'yolov5s', source='local', pretrained=True)
