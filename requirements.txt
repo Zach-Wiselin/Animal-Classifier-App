@@ -5,3 +5,7 @@ torch
 torchvision
 numpy
 requests
+PyYAML>=5.3.1
+matplotlib>=3.2.2
+pandas>=1.1.4
+seaborn>=0.11.0
