@@ -6,6 +6,10 @@ import numpy as np
 from pathlib import Path
 import subprocess
 import requests
+import os
+
+# Ensure required system libraries are available (optional fix for environments with apt)
+os.system("apt-get update && apt-get install -y libgl1-mesa-glx")
 
 # Ensure YOLOv5 and ultralytics dependencies are available
 MODEL_PATH = Path("yolov5")
