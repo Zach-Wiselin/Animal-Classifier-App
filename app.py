@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import requests
 
-# Ensure YOLOv5 is available
+# Ensure YOLOv5 dependencies are available
 MODEL_PATH = Path("yolov5")
 if not MODEL_PATH.exists():
     subprocess.run(["git", "clone", "https://github.com/ultralytics/yolov5.git", str(MODEL_PATH)])
@@ -19,7 +19,7 @@ def load_model():
 
 model = load_model()
 
-# Define animal classes
+# Animal and bird classes
 animal_classes = [
     "cat", "dog", "bird", "cow", "horse", "sheep", "elephant", "bear", "zebra", "giraffe", "lion", "tiger",
     "deer", "fox", "rabbit", "kangaroo", "leopard", "wolf", "monkey", "panda", "peacock", "eagle", "owl",
@@ -31,24 +31,24 @@ CONFIDENCE_THRESHOLD = 0.6
 
 # Streamlit app
 st.title("Animal Classifier App 🐾")
-st.write("Use your webcam to classify animals or birds in real-time!")
+st.write("Capture an image using your webcam to classify animals or birds!")
 
 # Webcam input
 camera_input = st.camera_input("Take a picture using your webcam")
 
 if camera_input:
-    # Process the image
+    # Load the image from camera input
     image = Image.open(camera_input).convert("RGB")
     st.image(image, caption="Captured Image", use_column_width=True)
 
-    # Convert the image to a NumPy array
+    # Convert image to NumPy array for YOLOv5
     img_array = np.array(image)
 
     # Perform object detection
     results = model(img_array)
     detections = results.pandas().xyxy[0]
 
-    # Draw bounding boxes on the image
+    # Draw bounding boxes and labels
     draw = ImageDraw.Draw(image)
     for _, detection in detections.iterrows():
         label = detection["name"]
@@ -60,7 +60,7 @@ if camera_input:
             draw.rectangle([x1, y1, x2, y2], outline="green", width=2)
             draw.text((x1, y1 - 10), f"{label.upper()} ({confidence * 100:.2f}%)", fill="green")
 
-    # Display the image with bounding boxes
+    # Display the processed image with bounding boxes
     st.image(image, caption="Processed Image", use_column_width=True)
 
     # Fetch additional information about detected animals
