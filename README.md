@@ -33,13 +33,6 @@ Welcome to the Animal Classifier App! This app is super cool and easy to use. Yo
 - **Classification with Info**: Identifies animals and provides small, fun facts about them.
 - **Interactive and User-Friendly**: Uses Streamlit to create a simple and engaging interface.
 
-## Contributing
-
-Contributions are welcome! Feel free to fork this repository, make improvements, and submit a pull request. Please ensure your changes align with the project's goals and maintain high code quality.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
