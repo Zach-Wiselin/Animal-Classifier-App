@@ -1,75 +1,83 @@
 import streamlit as st
 from PIL import Image, ImageDraw
 import numpy as np
+import torch
+from pathlib import Path
+import subprocess
 import requests
-import tensorflow as tf
 
-# Load the MobileNet model
+# Ensure YOLOv5 is available
+MODEL_PATH = Path("yolov5")
+if not MODEL_PATH.exists():
+    subprocess.run(["git", "clone", "https://github.com/ultralytics/yolov5.git", str(MODEL_PATH)])
+    subprocess.run(["pip", "install", "-r", str(MODEL_PATH / "requirements.txt")])
+
+# Load YOLOv5 model
 @st.cache_resource
 def load_model():
-    model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/classification/4"
-    return tf.keras.Sequential([tf.keras.layers.Input(shape=(224, 224, 3)), tf.keras.models.load_model(model_url)])
+    return torch.hub.load(str(MODEL_PATH), "yolov5s", source="local", pretrained=True)
 
 model = load_model()
 
-# Load labels for MobileNet
-@st.cache_data
-def load_labels():
-    labels_url = "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
-    response = requests.get(labels_url)
-    labels = response.text.splitlines()
-    return labels
+# Define animal classes
+animal_classes = [
+    "cat", "dog", "bird", "cow", "horse", "sheep", "elephant", "bear", "zebra", "giraffe", "lion", "tiger",
+    "deer", "fox", "rabbit", "kangaroo", "leopard", "wolf", "monkey", "panda", "peacock", "eagle", "owl",
+    "parrot", "penguin", "sparrow", "falcon", "flamingo", "dove", "hawk", "woodpecker"
+]
 
-labels = load_labels()
+# Confidence threshold
+CONFIDENCE_THRESHOLD = 0.6
 
-# Streamlit App Title
-st.title("Lightweight Animal Classifier 🐾")
-
-st.write("Use your webcam or upload an image to classify animals efficiently!")
+# Streamlit app
+st.title("Animal Classifier App 🐾")
+st.write("Use your webcam to classify animals or birds in real-time!")
 
 # Webcam input
 camera_input = st.camera_input("Take a picture using your webcam")
 
-# Image uploader (alternative input)
-uploaded_file = st.file_uploader("Or upload an image", type=["jpg", "jpeg", "png"])
+if camera_input:
+    # Process the image
+    image = Image.open(camera_input).convert("RGB")
+    st.image(image, caption="Captured Image", use_column_width=True)
 
-# Process the image (from webcam or uploaded file)
-if camera_input or uploaded_file:
-    # Get the image
-    image = Image.open(camera_input or uploaded_file).convert("RGB")
+    # Convert the image to a NumPy array
+    img_array = np.array(image)
 
-    # Preprocess the image for MobileNet
-    input_image = image.resize((224, 224))  # Resize to MobileNet's expected input
-    input_array = np.array(input_image) / 255.0  # Normalize pixel values
-    input_array = np.expand_dims(input_array, axis=0)  # Add batch dimension
+    # Perform object detection
+    results = model(img_array)
+    detections = results.pandas().xyxy[0]
 
-    # Perform classification
-    predictions = model(input_array)
-    predicted_label = labels[np.argmax(predictions)]
-    confidence = np.max(predictions) * 100
-
-    # Draw results on the image
+    # Draw bounding boxes on the image
     draw = ImageDraw.Draw(image)
-    draw.text((10, 10), f"{predicted_label}: {confidence:.2f}%", fill="green")
+    for _, detection in detections.iterrows():
+        label = detection["name"]
+        confidence = detection["confidence"]
 
-    # Display the image with the label
+        # Only process animal classes with sufficient confidence
+        if label in animal_classes and confidence > CONFIDENCE_THRESHOLD:
+            x1, y1, x2, y2 = map(int, [detection["xmin"], detection["ymin"], detection["xmax"], detection["ymax"]])
+            draw.rectangle([x1, y1, x2, y2], outline="green", width=2)
+            draw.text((x1, y1 - 10), f"{label.upper()} ({confidence * 100:.2f}%)", fill="green")
+
+    # Display the image with bounding boxes
     st.image(image, caption="Processed Image", use_column_width=True)
-    st.write(f"### Detected: {predicted_label}")
-    st.write(f"**Confidence:** {confidence:.2f}%")
 
-    # Display additional information about the detected animal
-    st.write(f"Fetching more information about **{predicted_label}**...")
-    try:
-        response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
-        if response.status_code == 200:
-            data = response.json()
-            animal_info = data.get("extract", "No additional information available.")
-        else:
-            animal_info = "No additional information available."
-    except Exception:
-        animal_info = "Failed to fetch additional information."
-
-    st.write(f"**Info:** {animal_info}")
+    # Fetch additional information about detected animals
+    st.write("Animal Information:")
+    for _, detection in detections.iterrows():
+        label = detection["name"]
+        if label in animal_classes:
+            try:
+                response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{label}")
+                if response.status_code == 200:
+                    data = response.json()
+                    animal_info = data.get("extract", "No additional information available.")
+                else:
+                    animal_info = "No additional information available."
+            except Exception:
+                animal_info = "Failed to fetch additional information."
+            st.write(f"**{label.capitalize()}:** {animal_info}")
 
 # Footer
-st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ for lightweight classification</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ using YOLOv5</div>", unsafe_allow_html=True)
