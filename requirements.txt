@@ -1,8 +1,9 @@
-streamlit
-pillow
-opencv-python-headless
+ultralytics
 torch
 torchvision
+opencv-python-headless
+streamlit
+pillow
 numpy
 requests
 PyYAML>=5.3.1
