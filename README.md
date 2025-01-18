@@ -1,121 +1,125 @@
 # Animal Classifier App 🐾
 
-Welcome to the Animal Classifier App! This application uses machine learning and computer vision to identify animals in real-time from your webcam feed and provides fun, informative facts about them. Powered by Streamlit, YOLOv5, and a subset of COCO dataset classes, this app is a fantastic tool for animal enthusiasts and learners.
+Welcome to the **Animal Classifier App**! This application uses machine learning and computer vision to classify animals in real-time using a webcam feed. It also provides interesting facts about the identified animals by integrating with the Wikipedia API. Built with Streamlit, this app offers a clean and interactive user interface for animal enthusiasts and learners.
+
+Check out the live app here: **Animal Classifier App**
 
 ---
 
 ## Features
 
-- **Real-time Animal Detection**: Capture live webcam feed and classify animals with high accuracy.
-- **Animal Facts**: Learn fun and interesting facts about the detected animals.
-- **Interactive Interface**: Built with Streamlit for a clean and user-friendly experience.
+- **Real-time Animal Classification:** Capture an image using your webcam, and the app identifies the animal in the image.
+- **Informative Facts:** Fetches additional information about the detected animal from Wikipedia.
+- **Elegant Design:** Clean and responsive interface with centralized elements for an enhanced user experience.
+
+---
+
+## How the Project Works
+
+### Input Image Capture
+- The app uses Streamlit's `st.camera_input()` feature to allow users to capture an image using their webcam.
+
+### Image Preprocessing
+- Captured images are resized to **224x224 pixels**, normalized, and converted into a format compatible with the pre-trained model.
+
+### Animal Classification
+- The app uses TensorFlow Hub's **MobileNetV2** model to classify animals in the captured image. This lightweight, pre-trained model is hosted on TensorFlow Hub and designed for image classification tasks.
+
+### Wikipedia Integration
+- After predicting the animal, the app uses the **Wikipedia API** to fetch additional information about the identified animal and displays it to the user.
+
+### Interactive Feedback
+- The app displays the predicted animal's name, confidence score, and relevant information in a user-friendly layout.
+
+---
+
+## Tools and Technologies Used
+
+1. **Streamlit**: Provides a clean and interactive user interface for capturing webcam images and displaying classification results.
+2. **TensorFlow Hub**: The app leverages the MobileNetV2 model hosted on TensorFlow Hub for efficient and accurate image classification.
+3. **Pillow (PIL)**: Used for image manipulation and preprocessing.
+4. **NumPy**: Handles numerical operations required for image normalization and reshaping.
+5. **Wikipedia API**: Fetches detailed information about the identified animal for enhanced user engagement.
 
 ---
 
 ## How to Set Up and Run the App
 
-Follow these steps to get the app up and running on your local machine:
+### Step 1: Clone the Repository
+Clone this repository to your local machine:
 
-### **Step 1: Clone the Repository**
+```bash
+git clone https://github.com/Zach-Wiselin/Animal-Classifier-App.git
+```
 
-1. Clone this repository to your local machine:
-   ```bash
-   git clone https://github.com/Zach-Wiselin/Animal-Classifier-App.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd Animal-Classifier-App
-   ```
+Navigate to the project directory:
 
-### **Step 2: Clone the YOLOv5 Repository**
+```bash
+cd Animal-Classifier-App
+```
 
-1. Clone the YOLOv5 repository into the project folder:
-   ```bash
-   git clone https://github.com/ultralytics/yolov5.git
-   ```
-2. Navigate to the YOLOv5 directory and install its dependencies:
-   ```bash
-   cd yolov5
-   pip install -r requirements.txt
-   ```
-3. Return to the main project directory:
-   ```bash
-   cd ..
-   ```
+### Step 2: Install Dependencies
+Install the required dependencies using the `requirements.txt` file:
 
-### **Step 3: Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-1. Install the Python dependencies specified in the `requirements.txt` file:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Step 3: Run the Application
+Start the Streamlit app:
 
-### **Step 4: Run the Application**
+```bash
+streamlit run app.py
+```
 
-1. Start the Streamlit app:
-   ```bash
-   streamlit run app.py
-   ```
-2. A new browser window/tab will open, displaying the app interface.
+A new browser window/tab will open, displaying the app interface.
 
 ---
 
 ## Application Workflow
 
-1. **Start Webcam Feed**: Check the "Start Webcam" box to activate your webcam and begin detecting animals.
-2. **Real-time Detection**: The app will classify animals in the webcam feed and display their names and confidence scores.
-3. **Learn About Animals**: When an animal is detected, the app fetches fun facts and information about it using the Wikipedia API.
-4. **Retry Detection**: Use the "Retry" button to clear the current detection and start over.
-
----
-
-## Project Structure
-
-Here's an overview of the project's structure:
-
-```
-Animal-Classifier-App/
-├── app.py              # Main application script
-├── requirements.txt    # List of dependencies
-├── README.md           # Documentation (this file)
-├── yolov5/             # Cloned YOLOv5 repository
-```
+1. **Start the App:** Open the app in your browser after starting it locally.
+2. **Capture an Image:** Use the "Take a Picture" button to capture an image of an animal using your webcam.
+3. **View Classification Results:** The app will classify the captured image and display:
+   - The predicted animal's name.
+   - The confidence score of the prediction.
+   - Fun and informative details about the animal fetched from Wikipedia.
+4. **Retry:** Capture another image for classification.
 
 ---
 
 ## Troubleshooting
 
-### **Common Issues**
+### Common Issues
 
-1. **YOLOv5 Repository Not Found**:
-   Ensure that the YOLOv5 repository is cloned inside the project directory. Follow Step 2 above.
+- **Webcam Not Working:**
+  - Ensure your browser or system allows webcam access.
 
-2. **Webcam Access Denied**:
-   Ensure your browser or system allows webcam access. If using a remote server, additional configurations may be required.
+- **ModuleNotFoundError:**
+  - Double-check that all dependencies are installed using:
 
-3. **ModuleNotFoundError**:
-   Double-check that all dependencies are installed with:
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-4. **Wikipedia API Issues**:
-   Ensure an internet connection is active to fetch animal information.
+- **Wikipedia API Issues:**
+  - Ensure your internet connection is active.
 
 ---
 
 ## Future Improvements
 
-- Support for additional animal classes.
-- Integration with more datasets for enhanced accuracy.
-- Improved UI for better user experience.
+- Add support for a broader range of animal classes.
+- Incorporate multiple pre-trained models for enhanced classification accuracy.
+- Improve UI responsiveness and animations for better user interaction.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the LICENSE file for details.
 
 ---
 
-Made with ❤️ by Zach. Happy Exploring!
+**Made with ❤️ by Zach**
+
