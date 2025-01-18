@@ -6,10 +6,6 @@ import numpy as np
 from pathlib import Path
 import subprocess
 import requests
-import os
-
-# Ensure required system libraries are available (optional fix for environments with apt)
-os.system("apt-get update && apt-get install -y libgl1-mesa-glx")
 
 # Ensure YOLOv5 and ultralytics dependencies are available
 MODEL_PATH = Path("yolov5")
@@ -23,6 +19,13 @@ try:
 except ImportError:
     subprocess.run(["pip", "install", "ultralytics"])
     import ultralytics
+
+# Ensure OpenCV headless is installed
+try:
+    cv2_version = cv2.__version__
+except ImportError:
+    subprocess.run(["pip", "install", "opencv-python-headless"])
+    import cv2
 
 # Load YOLOv5 model (using a fine-tuned or pre-trained weights path)
 model = torch.hub.load(str(MODEL_PATH), 'yolov5s', source='local', pretrained=True)
