@@ -1,4 +1,5 @@
-tensorflow>=2.6.0
+tensorflow
+tensorflow-hub
 numpy
 streamlit
 pillow
