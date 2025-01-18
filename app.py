@@ -5,9 +5,14 @@ import torch
 import numpy as np
 from pathlib import Path
 import requests
+import subprocess
+
+# Clone YOLOv5 dynamically if not present
+MODEL_PATH = Path("yolov5")
+if not MODEL_PATH.exists():
+    subprocess.run(["git", "clone", "https://github.com/ultralytics/yolov5.git", str(MODEL_PATH)])
 
 # Load YOLOv5 model (using a fine-tuned or pre-trained weights path)
-MODEL_PATH = Path("yolov5")  # Path to the cloned YOLOv5 repo
 model = torch.hub.load(str(MODEL_PATH), 'yolov5s', source='local', pretrained=True)
 
 # Expanded animal and bird classes (subset of COCO + others)
