@@ -4,32 +4,26 @@ import numpy as np
 import tensorflow as tf
 import requests
 
-# Load MobileNetV2 model pre-trained on ImageNet
+# Load a pre-trained model for animal classification
 @st.cache_resource
-def load_model():
-    return tf.keras.applications.MobileNetV2(weights="imagenet")
+def load_animal_model():
+    return tf.keras.models.load_model("https://tfhub.dev/google/aiy/vision/classifier/animals_V1/1")
 
-model = load_model()
+model = load_animal_model()
 
-# Load ImageNet labels
-@st.cache_data
-def load_labels():
-    labels_path = tf.keras.utils.get_file(
-        "ImageNetLabels.txt",
-        "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
-    )
-    with open(labels_path, "r") as f:
-        labels = [line.strip() for line in f.readlines()]
-    return labels
-
-labels = load_labels()
-
-# Preprocess image for MobileNetV2
+# Preprocess image for the animal classifier model
 def preprocess_image(image):
-    image = image.resize((224, 224))  # Resize to MobileNetV2 input size
-    img_array = np.array(image)
-    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)  # Preprocess for MobileNetV2
+    image = image.resize((224, 224))  # Resize to input size
+    img_array = np.array(image, dtype=np.float32) / 255.0  # Normalize pixel values
     return np.expand_dims(img_array, axis=0)  # Add batch dimension
+
+# Class labels specific to the animal classification model
+animal_labels = [
+    "cat", "dog", "horse", "cow", "sheep", "elephant", "bear", "zebra", "giraffe",
+    "lion", "tiger", "deer", "fox", "rabbit", "kangaroo", "leopard", "wolf", "monkey", 
+    "panda", "peacock", "eagle", "owl", "parrot", "penguin", "sparrow", "falcon", 
+    "flamingo", "dove", "hawk", "woodpecker"
+]
 
 # Streamlit App
 st.markdown(
@@ -71,7 +65,7 @@ if camera_input:
     input_array = preprocess_image(image)
     predictions = model.predict(input_array)
     predicted_class_idx = np.argmax(predictions[0])
-    predicted_label = labels[predicted_class_idx]
+    predicted_label = animal_labels[predicted_class_idx]
     confidence = predictions[0][predicted_class_idx] * 100
 
     # Display results
