@@ -2,35 +2,38 @@ import streamlit as st
 from PIL import Image
 import numpy as np
 import tensorflow as tf
-import requests
 
-# Load the MobileNet model
+# Load MobileNetV2 model pre-trained on ImageNet
 @st.cache_resource
 def load_model():
-    model_url = "https://tfhub.dev/google/tf2-preview/mobilenet_v2/classification/4"
-    model = tf.keras.Sequential([
-        tf.keras.layers.InputLayer(input_shape=(224, 224, 3)),
-        tf.keras.layers.Rescaling(1.0 / 255),
-        tf.keras.models.load_model(model_url, compile=False)
-    ])
-    return model
+    return tf.keras.applications.MobileNetV2(weights="imagenet")
 
 model = load_model()
 
-# Load labels for MobileNet
+# Load ImageNet labels
 @st.cache_data
 def load_labels():
-    labels_url = "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
-    response = requests.get(labels_url)
-    response.raise_for_status()
-    labels = response.text.splitlines()
+    # These are the ImageNet class labels
+    labels_path = tf.keras.utils.get_file(
+        "ImageNetLabels.txt",
+        "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
+    )
+    with open(labels_path, "r") as f:
+        labels = [line.strip() for line in f.readlines()]
     return labels
 
 labels = load_labels()
 
+# Preprocess image for MobileNetV2
+def preprocess_image(image):
+    image = image.resize((224, 224))  # Resize to MobileNetV2 input size
+    img_array = np.array(image)
+    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)  # Preprocess for MobileNetV2
+    return np.expand_dims(img_array, axis=0)  # Add batch dimension
+
 # Streamlit App
-st.title("Lightweight Animal Classifier 🐾")
-st.write("Capture an image using your webcam to classify animals efficiently!")
+st.title("Animal Classifier 🐾")
+st.write("Capture an image using your webcam to classify animals.")
 
 # Webcam input
 camera_input = st.camera_input("Take a picture using your webcam")
@@ -40,32 +43,30 @@ if camera_input:
     image = Image.open(camera_input).convert("RGB")
     st.image(image, caption="Captured Image", use_column_width=True)
 
-    # Preprocess the image for MobileNet
-    input_image = image.resize((224, 224))  # Resize to 224x224 pixels
-    input_array = np.array(input_image, dtype=np.float32)[np.newaxis, ...]  # Add batch dimension
-
-    # Perform classification
+    # Preprocess the image and predict
+    input_array = preprocess_image(image)
     predictions = model.predict(input_array)
-    predicted_label = labels[np.argmax(predictions)]
-    confidence = np.max(predictions) * 100
+    predicted_class_idx = np.argmax(predictions[0])
+    predicted_label = labels[predicted_class_idx]
+    confidence = predictions[0][predicted_class_idx] * 100
 
     # Display results
-    st.write(f"### Detected: {predicted_label}")
+    st.write(f"### Predicted: {predicted_label}")
     st.write(f"**Confidence:** {confidence:.2f}%")
 
-    # Fetch additional information about the detected label
-    st.write("Fetching more information...")
-    try:
-        response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
-        if response.status_code == 200:
-            data = response.json()
-            animal_info = data.get("extract", "No additional information available.")
-        else:
-            animal_info = "No additional information available."
-    except Exception:
-        animal_info = "Failed to fetch additional information."
-
-    st.write(f"**Info about {predicted_label}:** {animal_info}")
+    # Provide additional context for animals
+    if predicted_label.lower() in [label.lower() for label in labels if "dog" in label or "cat" in label or "bird" in label]:
+        st.write(f"Fetching additional information about {predicted_label}...")
+        try:
+            response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
+            if response.status_code == 200:
+                data = response.json()
+                animal_info = data.get("extract", "No additional information available.")
+            else:
+                animal_info = "No additional information available."
+        except Exception:
+            animal_info = "Failed to fetch additional information."
+        st.write(f"**Info about {predicted_label}:** {animal_info}")
 
 # Footer
-st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ using TensorFlow Lite</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ using TensorFlow MobileNetV2</div>", unsafe_allow_html=True)
