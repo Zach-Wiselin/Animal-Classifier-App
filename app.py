@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import numpy as np
 import tensorflow as tf
+import requests
 
 # Load MobileNetV2 model pre-trained on ImageNet
 @st.cache_resource
@@ -13,7 +14,6 @@ model = load_model()
 # Load ImageNet labels
 @st.cache_data
 def load_labels():
-    # These are the ImageNet class labels
     labels_path = tf.keras.utils.get_file(
         "ImageNetLabels.txt",
         "https://storage.googleapis.com/download.tensorflow.org/data/ImageNetLabels.txt"
@@ -32,8 +32,32 @@ def preprocess_image(image):
     return np.expand_dims(img_array, axis=0)  # Add batch dimension
 
 # Streamlit App
-st.title("Animal Classifier 🐾")
-st.write("Capture an image using your webcam to classify animals.")
+st.markdown(
+    """
+    <style>
+    .title {
+        text-align: center;
+        font-size: 36px;
+        font-weight: bold;
+    }
+    .subtitle {
+        text-align: center;
+        font-size: 18px;
+        color: gray;
+    }
+    .footer {
+        text-align: center;
+        margin-top: 50px;
+        font-size: 14px;
+        color: gray;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown('<div class="title">Animal Classifier 🐾</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Capture an image using your webcam to classify animals.</div>', unsafe_allow_html=True)
 
 # Webcam input
 camera_input = st.camera_input("Take a picture using your webcam")
@@ -51,22 +75,21 @@ if camera_input:
     confidence = predictions[0][predicted_class_idx] * 100
 
     # Display results
-    st.write(f"### Predicted: {predicted_label}")
-    st.write(f"**Confidence:** {confidence:.2f}%")
+    st.markdown(f"### It's a **{predicted_label}**!")
+    st.markdown(f"**Confidence:** {confidence:.2f}%")
 
-    # Provide additional context for animals
-    if predicted_label.lower() in [label.lower() for label in labels if "dog" in label or "cat" in label or "bird" in label]:
-        st.write(f"Fetching additional information about {predicted_label}...")
-        try:
-            response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
-            if response.status_code == 200:
-                data = response.json()
-                animal_info = data.get("extract", "No additional information available.")
-            else:
-                animal_info = "No additional information available."
-        except Exception:
-            animal_info = "Failed to fetch additional information."
-        st.write(f"**Info about {predicted_label}:** {animal_info}")
+    # Fetch additional information about the detected label
+    st.markdown(f"Fetching information about **{predicted_label}**...")
+    try:
+        response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
+        if response.status_code == 200:
+            data = response.json()
+            animal_info = data.get("extract", "No additional information available.")
+        else:
+            animal_info = "No additional information available."
+    except Exception:
+        animal_info = "Failed to fetch additional information."
+    st.markdown(f"**Info about {predicted_label}:** {animal_info}")
 
 # Footer
-st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ using TensorFlow MobileNetV2</div>", unsafe_allow_html=True)
+st.markdown('<div class="footer">Made with ❤️ by Zach</div>', unsafe_allow_html=True)
