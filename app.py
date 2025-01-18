@@ -4,10 +4,10 @@ import numpy as np
 import tensorflow as tf
 import requests
 
-# Load MobileNetV2 pre-trained on ImageNet
+# Load EfficientNetB0 pre-trained on ImageNet
 @st.cache_resource
 def load_model():
-    return tf.keras.applications.MobileNetV2(weights="imagenet")
+    return tf.keras.applications.EfficientNetB0(weights="imagenet")
 
 model = load_model()
 
@@ -22,18 +22,19 @@ def load_labels():
 
 labels = load_labels()
 
-# Define animal-related ImageNet labels (manually filtered)
+# Define a broader set of animal classes (manually filtered for better coverage)
 animal_classes = [
     "golden retriever", "tabby cat", "Persian cat", "cow", "elephant", "zebra", "giraffe", "tiger",
     "lion", "cheetah", "bear", "panda", "kangaroo", "wolf", "fox", "deer", "rabbit", "monkey",
-    "peacock", "parrot", "eagle", "owl", "penguin", "sparrow", "flamingo", "hawk", "woodpecker"
+    "peacock", "parrot", "eagle", "owl", "penguin", "sparrow", "flamingo", "hawk", "woodpecker",
+    "cattle", "ox", "buffalo", "camel", "goat", "sheep", "chicken", "duck", "goose"
 ]
 
-# Preprocess image for MobileNetV2
+# Preprocess image for EfficientNet
 def preprocess_image(image):
-    image = image.resize((224, 224))  # Resize to MobileNetV2 input size
+    image = image.resize((224, 224))  # Resize to EfficientNetB0 input size
     img_array = np.array(image)
-    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)  # Normalize
+    img_array = tf.keras.applications.efficientnet.preprocess_input(img_array)  # Normalize
     return np.expand_dims(img_array, axis=0)  # Add batch dimension
 
 # Streamlit App
@@ -49,14 +50,14 @@ if camera_input:
     st.image(image, caption="Captured Image", use_column_width=True)
     input_array = preprocess_image(image)
 
-    # Predict using MobileNetV2
+    # Predict using EfficientNet
     predictions = model.predict(input_array)
     predicted_class_idx = np.argmax(predictions[0])
     predicted_label = labels[predicted_class_idx]
     confidence = predictions[0][predicted_class_idx] * 100
 
     # Check if the predicted label is an animal
-    if predicted_label in animal_classes:
+    if predicted_label.lower() in [animal.lower() for animal in animal_classes]:
         st.markdown(f"### It's a **{predicted_label.capitalize()}**!")
         st.markdown(f"**Confidence:** {confidence:.2f}%")
 
