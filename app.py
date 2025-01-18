@@ -1,6 +1,5 @@
 import streamlit as st
-from PIL import Image
-import cv2
+from PIL import Image, ImageDraw
 import torch
 import numpy as np
 from pathlib import Path
@@ -20,13 +19,6 @@ except ImportError:
     subprocess.run(["pip", "install", "ultralytics"])
     import ultralytics
 
-# Ensure OpenCV headless is installed
-try:
-    cv2_version = cv2.__version__
-except ImportError:
-    subprocess.run(["pip", "install", "opencv-python-headless"])
-    import cv2
-
 # Load YOLOv5 model (using a fine-tuned or pre-trained weights path)
 model = torch.hub.load(str(MODEL_PATH), 'yolov5s', source='local', pretrained=True)
 
@@ -42,89 +34,54 @@ CONFIDENCE_THRESHOLD = 0.6  # Filter out predictions below this confidence
 
 # Streamlit app
 st.title("Animal Classifier App 🐾")
+st.write("Use your webcam feed to classify animals or birds in real-time!")
 
-st.write("Use your webcam feed to classify animals or birds in real-time with improved accuracy!")
+# Webcam input
+camera_input = st.camera_input("Take a picture using your webcam")
 
-# Centered Start Webcam Checkbox
-st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-run = st.checkbox('Start Webcam')
-st.markdown("</div>", unsafe_allow_html=True)
+if camera_input:
+    # Read the image from the webcam input
+    image = Image.open(camera_input).convert("RGB")
+    st.image(image, caption="Captured Image", use_column_width=True)
 
-FRAME_WINDOW = st.empty()
-info_placeholder = st.empty()
-cap = cv2.VideoCapture(0)
+    # Convert image to a NumPy array
+    img_array = np.array(image)
 
-captured_animal = None
+    # Perform object detection
+    results = model(img_array)
+    detections = results.pandas().xyxy[0]  # Get detection results
 
-# Centered Retry Button
-st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-retry = st.button("Retry")
-st.markdown("</div>", unsafe_allow_html=True)
+    # Draw bounding boxes and labels
+    draw = ImageDraw.Draw(image)
+    for _, detection in detections.iterrows():
+        label = detection['name']
+        confidence = detection['confidence']
 
-if retry:
-    captured_animal = None
+        # Only process animal classes with sufficient confidence
+        if label in animal_classes and confidence > CONFIDENCE_THRESHOLD:
+            x1, y1, x2, y2 = map(int, [detection['xmin'], detection['ymin'], detection['xmax'], detection['ymax']])
+            draw.rectangle([x1, y1, x2, y2], outline="green", width=2)
+            draw.text((x1, y1 - 10), f"{label.upper()} ({confidence * 100:.2f}%)", fill="green")
 
-if run:
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            st.warning("Could not access webcam.")
-            break
+    # Display the result with bounding boxes
+    st.image(image, caption="Detected Image", use_column_width=True)
 
-        # Convert the frame to RGB
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Perform object detection
-        results = model(frame_rgb)
-        detections = results.pandas().xyxy[0]  # Get detection results
-
-        for index, detection in detections.iterrows():
-            label = detection['name']
-            confidence = detection['confidence']
-
-            # Only process animal classes with sufficient confidence
-            if label in animal_classes and confidence > CONFIDENCE_THRESHOLD:
-                # Draw bounding box
-                x1, y1, x2, y2 = int(detection['xmin']), int(detection['ymin']), int(detection['xmax']), int(detection['ymax'])
-                cv2.rectangle(frame_rgb, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                text = f"{label.upper()} ({confidence * 100:.2f}%)"
-                cv2.putText(frame_rgb, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-                if captured_animal is None:
-                    captured_animal = label
-                    st.success(f"Captured: {captured_animal.upper()}!")
-
-        # Display the frame with bounding boxes
-        FRAME_WINDOW.image(frame_rgb, channels="RGB")
-
-        # Populate animal information
-        if captured_animal:
-            animal_info = f"Loading information for {captured_animal}..."
-            info_placeholder.markdown(f"### Animal Information:")
-
-            # Fetch information from an API (e.g., Wikipedia API)
+    # Display additional information about the detected animal
+    for _, detection in detections.iterrows():
+        label = detection['name']
+        if label in animal_classes:
+            st.write(f"**Detected Animal:** {label.capitalize()}")
             try:
-                response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{captured_animal}")
+                response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{label}")
                 if response.status_code == 200:
                     data = response.json()
                     animal_info = data.get("extract", "No information available.")
-            except:
-                animal_info = "Failed to retrieve information."
+                else:
+                    animal_info = "No information available."
+            except Exception:
+                animal_info = "Failed to fetch information."
 
-            # Display the information
-            info_placeholder.markdown(
-                f"<div style='text-align: center;'>"
-                f"<h2>It's a {captured_animal.capitalize()}!</h2>"
-                f"<p>{animal_info}</p>"
-                f"</div>",
-                unsafe_allow_html=True
-            )
-            break
-else:
-    st.write("Check the box above to start the webcam feed.")
+            st.write(f"**Info about {label.capitalize()}:** {animal_info}")
 
-# Footer with heart emoji
+# Footer
 st.markdown("<div style='text-align: center; margin-top: 50px;'>Made with ❤️ by Zach</div>", unsafe_allow_html=True)
-
-# Release the webcam
-cap.release()
