@@ -2,7 +2,7 @@
 
 Welcome to the **Animal Classifier App**! This application uses machine learning and computer vision to classify animals in real-time using a webcam feed. It also provides interesting facts about the identified animals by integrating with the Wikipedia API. Built with Streamlit, this app offers a clean and interactive user interface for animal enthusiasts and learners.
 
-Check out the live app here: **Animal Classifier App**
+Check out the live app here: This site was built using [Animal-Classifier-App](https://animal-classifier-app.streamlit.app/).
 
 ---
 
