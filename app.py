@@ -83,7 +83,6 @@ if camera_input:
         f"<div class='center'><h3>It's a <b>{predicted_label.capitalize()}</b>!</h3></div>",
         unsafe_allow_html=True,
     )
-    st.markdown(f"<div class='center'><b>Confidence:</b> {confidence:.2f}%</div>", unsafe_allow_html=True)
 
     # Fetch animal info from Wikipedia
     st.markdown(f"<div class='center'>Fetching information about <b>{predicted_label}</b>...</div>", unsafe_allow_html=True)
