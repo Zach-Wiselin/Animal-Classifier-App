@@ -85,7 +85,6 @@ if camera_input:
     )
 
     # Fetch animal info from Wikipedia
-    st.markdown(f"<div class='center'>Fetching information about <b>{predicted_label}</b>...</div>", unsafe_allow_html=True)
     try:
         response = requests.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{predicted_label}")
         if response.status_code == 200:
