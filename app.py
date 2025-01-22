@@ -68,7 +68,7 @@ camera_input = st.camera_input("Take a picture using your webcam")
 if camera_input:
     image = Image.open(camera_input).convert("RGB")
     st.markdown("<div class='center'>", unsafe_allow_html=True)
-    st.image(image, caption="Captured Image", use_column_width=True)
+    st.image(image, caption="Captured Image", use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Preprocess the image and make predictions
