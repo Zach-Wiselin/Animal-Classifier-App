@@ -5,6 +5,13 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import requests
 
+# Set the app title and other configurations
+st.set_page_config(
+    page_title="Animal Classifier App",
+    page_icon="🐾",
+    layout="centered"
+)
+
 # Load the TensorFlow Hub model
 @st.cache_resource
 def load_model():
